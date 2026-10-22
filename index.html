@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>よるやすみ | おやすみ逆算＆明日の安心ナビ</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="brand">
+          <span class="brand-icon">🌙</span>
+          <div>
+            <h1 class="brand-title">よるやすみ</h1>
+            <p class="brand-subtitle">おやすみ逆算＆明日の安心ナビ</p>
+          </div>
+        </div>
+        <div class="clock-chip" id="liveClock">--:--</div>
+      </div>
+
+      <!-- Reassuring Status Banner -->
+      <div class="reassurance-banner" id="reassuranceBanner">
+        <div class="banner-badge" id="bannerBadge">自由時間</div>
+        <p class="banner-main" id="bannerMainText">読み込み中...</p>
+        <p class="banner-sub" id="bannerSubText"></p>
+      </div>
+    </header>
+
+    <!-- Main Tab Views -->
+    <main class="app-content">
+
+      <!-- TAB 1: 逆算タイムライン (Backcast Timeline) -->
+      <section class="tab-panel active" id="tab-timeline">
+        <div class="card">
+          <div class="card-header">
+            <h2>⏰ 明日の起床・出発から逆算</h2>
+            <button class="btn-text" id="toggleSettingsBtn">設定を折りたたむ ▲</button>
+          </div>
+
+          <!-- Quick Summary Pills (Tap to open settings) -->
+          <div class="summary-grid" id="summaryPillsGrid">
+            <div class="summary-pill clickable-pill" data-focus="wake">
+              <span class="pill-label">☀️ 明日の起床</span>
+              <strong class="pill-value" id="dispWakeTime">07:00</strong>
+              <span class="pill-tap-hint">タップで変更</span>
+            </div>
+            <div class="summary-pill clickable-pill" data-focus="depart">
+              <span class="pill-label">🚪 明日の出発</span>
+              <strong class="pill-value" id="dispDepartTime">08:15</strong>
+              <span class="pill-tap-hint">タップで変更</span>
+            </div>
+            <div class="summary-pill highlight clickable-pill" data-focus="sleep">
+              <span class="pill-label">🛌 目標就寝</span>
+              <strong class="pill-value" id="dispBedTime">23:30</strong>
+              <span class="pill-tap-hint">自動逆算</span>
+            </div>
+          </div>
+
+          <!-- Always-visible Easy Time Controls -->
+          <div class="settings-drawer" id="settingsDrawer">
+            <!-- Wake Time Control -->
+            <div class="time-control-block">
+              <div class="time-control-header">
+                <label for="inputWakeTime">☀️ 明日の起床時刻</label>
+                <div class="stepper-group">
+                  <button type="button" class="btn-stepper" data-step-target="wakeTime" data-delta="-15">－15分</button>
+                  <input type="time" id="inputWakeTime" value="07:00" step="300">
+                  <button type="button" class="btn-stepper" data-step-target="wakeTime" data-delta="15">＋15分</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Depart Time Control -->
+            <div class="time-control-block">
+              <div class="time-control-header">
+                <label for="inputDepartTime">🚪 明日の出発・開始時刻</label>
+                <div class="stepper-group">
+                  <button type="button" class="btn-stepper" data-step-target="departTime" data-delta="-15">－15分</button>
+                  <input type="time" id="inputDepartTime" value="08:15" step="300">
+                  <button type="button" class="btn-stepper" data-step-target="departTime" data-delta="15">＋15分</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sleep Hours -->
+            <div class="form-row">
+              <label for="inputSleepHours">💤 確保したい睡眠時間</label>
+              <select id="inputSleepHours">
+                <option value="5.5">5時間30分</option>
+                <option value="6">6時間</option>
+                <option value="6.5">6時間30分</option>
+                <option value="7">7時間</option>
+                <option value="7.5" selected>7時間30分（おすすめ）</option>
+                <option value="8">8時間</option>
+                <option value="8.5">8時間30分</option>
+                <option value="9">9時間</option>
+              </select>
+            </div>
+
+            <!-- Morning Prep -->
+            <div class="form-row">
+              <label for="inputMorningPrep">🌅 朝の支度にかかる時間</label>
+              <select id="inputMorningPrep">
+                <option value="15">15分（超時短）</option>
+                <option value="20">20分（最小限）</option>
+                <option value="30">30分</option>
+                <option value="45" selected>45分（標準）</option>
+                <option value="60">60分（ゆっくり）</option>
+                <option value="75">75分（余裕たっぷり）</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Re-calculation for Late Nights -->
+        <div class="late-rescue-card" id="lateRescueCard">
+          <div class="rescue-content">
+            <span class="rescue-icon">💡</span>
+            <div>
+              <strong id="rescueTitle">予定より少し遅れても大丈夫！</strong>
+              <p id="rescueDesc">ボタン1つで今夜の予定を無理のない時間に調整できます。</p>
+            </div>
+          </div>
+          <div class="rescue-actions">
+            <button type="button" class="btn-secondary btn-sm" id="btnShift15">＋15分後ろ倒し</button>
+            <button type="button" class="btn-secondary btn-sm" id="btnShortcutMode">⚡ 準備を時短モードに</button>
+            <button type="button" class="btn-ghost btn-sm hidden" id="btnResetShift">元に戻す</button>
+          </div>
+        </div>
+
+        <!-- Visual Backcast Timeline -->
+        <div class="card">
+          <h2>🌙 今夜〜明日の朝のタイムブロック</h2>
+          <p class="card-caption">ゴール（起床・出発）から逆算した安心スケジュールです</p>
+          <div class="timeline-list" id="backcastTimeline">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Morning Peace-of-Mind Box -->
+        <div class="card morning-assurance-card" id="morningAssuranceCard">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- TAB 2: 寝る準備ナビ (Low-hurdle Night Routine) -->
+      <section class="tab-panel" id="tab-routine">
+        <div class="card hero-step-card" id="currentStepHero">
+          <div class="step-badge" id="heroStepBadge">ステップ 1 / 4</div>
+          <h2 class="hero-step-title" id="heroStepTitle">🛁 お風呂・シャワー</h2>
+          <div class="micro-action-box">
+            <span class="micro-label">🐾 最初の5秒アクション（これだけでOK）</span>
+            <p class="micro-text" id="heroMicroAction">タオルと着替えを1枚手に取るだけ</p>
+          </div>
+
+          <div class="routine-timer-box">
+            <div class="timer-ring-wrap">
+              <div class="timer-digits" id="routineTimerDisplay">20:00</div>
+              <div class="timer-status" id="routineTimerStatus">目安 20分</div>
+            </div>
+            <div class="timer-controls">
+              <button type="button" class="btn-primary btn-lg" id="btnToggleTimer">▶️ このステップを始める</button>
+              <div class="timer-sub-controls">
+                <button type="button" class="btn-secondary btn-sm" id="btnCompleteStep">✅ 完了して次へ</button>
+                <button type="button" class="btn-ghost btn-sm" id="btnSkipStep">今日はスキップ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>📋 今夜の準備リスト（残り <span id="totalRoutineMins">40</span>分）</h2>
+            <button type="button" class="btn-chip" id="btnToggleLazyMode">🔋 しんどい日（時短）切替</button>
+          </div>
+          <p class="card-caption">億劫な日は「時短モード」や「スキップ」でハードルを下げましょう</p>
+
+          <div class="routine-steps-list" id="routineStepsList">
+            <!-- Populated by JS -->
+          </div>
+
+          <div class="add-step-row">
+            <input type="text" id="newStepTitle" placeholder="項目を追加（例：ストレッチ）">
+            <input type="number" id="newStepMins" value="5" min="1" max="60" aria-label="分数">
+            <span class="unit-label">分</span>
+            <button type="button" class="btn-secondary btn-sm" id="btnAddStep">追加</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: 明日の安心シート (Anxiety Offload & Tomorrow Prep) -->
+      <section class="tab-panel" id="tab-peace">
+        <div class="card">
+          <h2>📦 頭の中のモヤモヤ・不安を預ける</h2>
+          <p class="card-caption">
+            寝る前に考え事をすると脳が起きてしまいます。<br>
+            ここに書けば<strong>「忘れないようにアプリが保管」</strong>するので、今夜は忘れて眠って大丈夫です。
+          </p>
+          <div class="worry-input-box">
+            <textarea id="worryInput" rows="3" placeholder="気になっていること、明日忘れたくないこと、なんとなく不安なことを何でも書き出す..."></textarea>
+            <button type="button" class="btn-primary" id="btnStoreWorry">📥 安心ボックスに預けて頭を空にする</button>
+          </div>
+          <div class="stored-worries-wrap" id="storedWorriesWrap"></div>
+        </div>
+
+        <div class="card">
+          <h2>🌱 明日「これだけやれば100点」リスト</h2>
+          <p class="card-caption">あれこれ詰め込まず、最低限これだけできればOKという3つだけに絞ります。</p>
+          <div class="top3-list">
+            <div class="top3-item">
+              <span class="top3-num">1</span>
+              <input type="text" class="top3-input" data-index="0" placeholder="一番大事なこと1つ目（例：〇〇の提出）">
+            </div>
+            <div class="top3-item">
+              <span class="top3-num">2</span>
+              <input type="text" class="top3-input" data-index="1" placeholder="2つ目（例：15分だけ作業する）">
+            </div>
+            <div class="top3-item">
+              <span class="top3-num">3</span>
+              <input type="text" class="top3-input" data-index="2" placeholder="3つ目（空欄でもOK！）">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🔐 寝る前の安心最終チェック</h2>
+          <p class="card-caption">チェックを入れるだけで「明日の朝の自分」が助かります</p>
+          <div class="peace-checklist" id="peaceChecklist"></div>
+        </div>
+
+        <button type="button" class="btn-shutdown" id="btnStartSleepMode">
+          🌙 明日の準備完了！本日の営業を終了する
+        </button>
+      </section>
+
+      <!-- TAB 4: おやすみモード (Sleep Sanctuary & Breathing) -->
+      <section class="tab-panel" id="tab-sleep">
+        <div class="card sleep-sanctuary-card">
+          <div class="moon-halo">🌕</div>
+          <h2 class="sleep-title">今日もお疲れさまでした</h2>
+          <p class="sleep-reassurance" id="sleepModeMessage">
+            明日の予定とメモはすべて保存されています。<br>
+            もう何も考えなくて大丈夫です。
+          </p>
+
+          <div class="sleep-countdown-pill" id="sleepRemainingBox">
+            今から眠れば <strong id="calcSleepDuration">7時間30分</strong> しっかり休めます
+          </div>
+
+          <div class="breathing-box">
+            <h3>🫧 眠くなる 4-7-8 呼吸ガイド</h3>
+            <div class="breath-circle-wrap">
+              <div class="breath-circle" id="breathCircle">
+                <span id="breathText">タップで開始</span>
+              </div>
+            </div>
+            <p class="breath-caption" id="breathSubText">4秒吸って・7秒止めて・8秒かけてゆっくり吐く</p>
+          </div>
+
+          <div class="sound-mixer-box">
+            <h3>🎧 心地よい環境音</h3>
+            <div class="sound-buttons">
+              <button type="button" class="sound-btn" data-sound="rain">🌧️ 静かな雨</button>
+              <button type="button" class="sound-btn" data-sound="waves">🌊 夜の波音</button>
+              <button type="button" class="sound-btn" data-sound="pink">🍃 優しい風</button>
+              <button type="button" class="sound-btn active" data-sound="off">🔇 オフ</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button type="button" class="nav-item active" data-tab="tab-timeline">
+        <span class="nav-icon">⏳</span>
+        <span class="nav-label">逆算予定</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-routine">
+        <span class="nav-icon">🛁</span>
+        <span class="nav-label">寝る準備</span>
+        <span class="nav-badge" id="routineNavBadge"></span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-peace">
+        <span class="nav-icon">🛡️</span>
+        <span class="nav-label">明日の安心</span>
+      </button>
+      <button type="button" class="nav-item" data-tab="tab-sleep">
+        <span class="nav-icon">🌙</span>
+        <span class="nav-label">おやすみ</span>
+      </button>
+    </nav>
+
+    <div class="toast hidden" id="toastMessage">保存しました</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
