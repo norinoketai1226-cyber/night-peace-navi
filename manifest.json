@@ -1,0 +1,10 @@
+{
+  "name": "よるやすみ | おやすみ逆算＆明日の安心ナビ",
+  "short_name": "よるやすみ",
+  "description": "明日の起床・出発から逆算して、億劫な寝る準備と明日の不安を解消するスマホ特化ツール",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b101e",
+  "theme_color": "#0b101e",
+  "orientation": "portrait"
+}
